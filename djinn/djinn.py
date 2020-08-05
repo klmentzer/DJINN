@@ -360,9 +360,9 @@ class DJINN_Regressor():
             pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
             unscale = self.__yscale.scale_[output_idx]
             if input_idx==None:
-                gr = tf.gradients(pred[:,output_idx],x)
+                gr = tf.gradients(pred[:,output_idx],x,stop_gradients=[x])
             else:
-                gr = tf.gradients(pred[:,output_idx],x[:,input_idx])
+                gr = tf.gradients(pred[:,output_idx],x,stop_gradients=x)
 
             keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
             x_test1 = self.__xscale.transform(x_test)
@@ -371,7 +371,38 @@ class DJINN_Regressor():
             if input_idx==None:
                 val = val*self.__xscale.scale_[0]/unscale
             else:
-                val = val*self.__xscale.scale_[input_idx]/unscale
+                val = 1/val[:,input_idx]*self.__xscale.scale_[input_idx]/unscale
+            grs.append(val)
+        return grs
+
+
+    def gradient_v2(self,x_test,input_idx=None,output_idx=0):
+        ''' BROKEN VERSION, EXPERIMENTING WITH GRADIENT TAPE '''
+        print('calculating gradient...')
+
+        grs = []
+        for p in range(0, self.__n_trees):
+            print('TREE {}:'.format(p))
+            x = self.__sess[p].graph.get_tensor_by_name("input:0")
+            pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
+            unscale = self.__yscale.scale_[output_idx]
+            # if input_idx==None:
+            #     gr = tf.gradients(pred[:,output_idx],x)
+            # else:
+            #     gr = tf.gradients(pred[:,output_idx],x[:,input_idx])
+
+            keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
+            x_test1 = self.__xscale.transform(x_test)
+            with tf.GradientTape() as tape:
+                tape.watch(x)
+                f = self.__yscale.inverse_transform(self.__sess[p].run(pred,\
+                feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob}))
+            grad_f = tape.gradient(f, x)
+            val = grad_f[0, 0]
+            # if input_idx==None:
+            #     val = val*self.__xscale.scale_[0]/unscale
+            # else:
+            #     val = val*self.__xscale.scale_[input_idx]/unscale
             grs.append(val)
         return grs
 

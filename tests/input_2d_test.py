@@ -25,23 +25,29 @@ def ddx_gaussian(x,p,mu,sig):
 
 
 num_pts = 1000
-X = np.linspace(-5,5,num_pts)
+X1 = np.linspace(-5,5,num_pts)
+X2 = np.linspace(-2,2,num_pts)
 y = np.zeros((num_pts,2))
-y[:,0] = gaussian(X,1,0,1)
-y[:,1] = gaussian(X,3,0,1)
+y[:,0] = gaussian(X1,1,X2,1)
+y[:,1] = gaussian(X1,3,X2,1)
 
+X = np.zeros((num_pts,2))
+X[:,0] = X1
+X[:,1] = X2
 # plt.figure()
 # plt.plot(X,y)
 # plt.plot(X,ddx_gaussian(x,1,0,1))
 # plt.plot(X,ddx_gaussian(x,3,0,1))
 # plt.show()
 
-X=X.reshape(-1,1)
+# X=X.reshape(-1,1)
+print(X)
+print(y)
 
 x_train,x_test,y_train,y_test=train_test_split(X, y, test_size=0.2, random_state=1)
 
 print("djinn example")
-modelname="gaussian_djinn_test"   # name the model
+modelname="input_2d_djinn_test"   # name the model
 ntrees=1                 # number of trees = number of neural nets in ensemble
 maxdepth=4               # max depth of tree -- optimize this for each data set
 dropout_keep=1.0         # dropout typically set to 1 for non-Bayesian models
@@ -77,17 +83,21 @@ print('MSE',mse)
 print('M Abs Err',mabs)
 print('Expl. Var.',exvar)
 
-g = model.gradient(x_test,output_idx=0)
-h = model.hessian(x_test)
+g = model.gradient(x_test,input_idx=0,output_idx=0)
+# h = model.hessian(x_test)
 
-g_baseline = ddx_gaussian(x_test,1,0,1) #+ddx_gaussian(x_test,3,0,1)
+
+g_baseline = np.zeros(x_test.shape[0])
+for i,mu in enumerate(x_test[:,1]):
+    g_baseline[i]= ddx_gaussian(x_test[i,0],1,mu,1) #+ddx_gaussian(x_test,3,0,1)
 # print(len(g))
+# print(g)
 # print(len(g[0]))
 # print(sum(g[0]-g_baseline))
 c = np.zeros((200,3))
-c[:,0] = g[0][:,0]
-c[:,1] = g_baseline[:,0]
-c[:,2] = g[0][:,0] - g_baseline[:,0]
+c[:,0] = np.array(g[0])
+c[:,1] = g_baseline
+c[:,2] = g[0] - g_baseline
 print(c)
 # print(h)
 
