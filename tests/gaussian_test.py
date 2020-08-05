@@ -80,7 +80,15 @@ print('Expl. Var.',exvar)
 g = model.gradient(x_test)
 h = model.hessian(x_test)
 
-# print(g)
+g_baseline = ddx_gaussian(x_test,1,0,1) #+ddx_gaussian(x_test,3,0,1)
+# print(len(g))
+# print(len(g[0]))
+# print(sum(g[0]-g_baseline))
+c = np.zeros((200,3))
+c[:,0] = g[0][:,0]
+c[:,1] = g_baseline[:,0]
+c[:,2] = g[0][:,0] - g_baseline[:,0]
+print(c)
 # print(h)
 
 #close model

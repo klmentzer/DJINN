@@ -350,7 +350,7 @@ class DJINN_Regressor():
         else:
             return(lower, middle, upper, samples)
 
-    def gradient(self,x_test):
+    def gradient(self,x_test,input_idx=None,output_idx=0):
         print('calculating gradient...')
 
         grs = []
@@ -358,38 +358,22 @@ class DJINN_Regressor():
             print('TREE {}:'.format(p))
             x = self.__sess[p].graph.get_tensor_by_name("input:0")
             pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
-            gr = tf.gradients(pred[:,0],x)
-            gr2 = tf.gradients(pred[:,1],x)
-            print(x.shape)
-            print(pred.shape)
+            unscale = self.__yscale.scale_[output_idx]
+            if input_idx==None:
+                gr = tf.gradients(pred[:,output_idx],x)
+            else:
+                gr = tf.gradients(pred[:,output_idx],x[:,input_idx])
 
             keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
-            val =self.__sess[p].run(gr[0],\
-                feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob})
-            val2 =self.__sess[p].run(gr2[0],\
-                feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob})
-            print(len(gr))
-            print(len(val))
-            print(val)
-            print(val2)
+            x_test1 = self.__xscale.transform(x_test)
+            val = self.__sess[p].run(gr[0],\
+                feed_dict={x:x_test1, keep_prob:self.__dropout_keep_prob})
+            if input_idx==None:
+                val = val*self.__xscale.scale_[0]/unscale
+            else:
+                val = val*self.__xscale.scale_[input_idx]/unscale
             grs.append(val)
         return grs
-    #
-    # def gradient(self,x_test):
-    #     print('calculating gradient...')
-    #
-    #     grs = []
-    #     for p in range(0, self.__n_trees):
-    #         print('TREE {}:'.format(p))
-    #         x = self.__sess[p].graph.get_tensor_by_name("input:0")
-    #         pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
-    #         gr = tf.gradients(pred,x)
-    #
-    #         keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
-    #         val = self.__yscale.inverse_transform(self.__sess[p].run(gr[0],\
-    #             feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob}))
-    #         grs.append(val)
-    #     return grs
 
     def hessian(self,x_test):
         print('calculating hessian...')
@@ -400,30 +384,13 @@ class DJINN_Regressor():
             x = self.__sess[p].graph.get_tensor_by_name("input:0")
             pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
             hs = tf.hessians(pred,x)
-            # print(hs[0])
 
             keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
             val = self.__sess[p].run(hs[0],\
                 feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob})
             hss.append(val)
         return hss
-    #
-    # def hessian(self,x_test):
-    #     print('calculating hessian...')
-    #
-    #     hss =[]
-    #     for p in range(0, self.__n_trees):
-    #         print('TREE {}:'.format(p))
-    #         x = self.__sess[p].graph.get_tensor_by_name("input:0")
-    #         pred = self.__sess[p].graph.get_tensor_by_name("prediction:0")
-    #         hs = tf.hessians(pred,x)
-    #         print(hs[0])
-    #
-    #         keep_prob = self.__sess[p].graph.get_tensor_by_name("keep_prob:0")
-    #         val = self.__yscale.inverse_transform(self.__sess[p].run(hs[0],\
-    #             feed_dict={x:x_test, keep_prob:self.__dropout_keep_prob}))
-    #         hss.append(val)
-    #     return hss
+
 
     def predict(self, x_test, random_state=None):
         """Predict target values for a set of test data.
