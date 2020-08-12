@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sklearn
 try: from sklearn.model_selection import train_test_split
 except: from sklearn.cross_validation import train_test_split
+from mpl_toolkits.mplot3d import Axes3D
 
 import sys
 sys.path.append('../djinn')
@@ -12,8 +13,14 @@ import djinn_fns
 
 def gaussian(x,p,mu,sig):
     c = 1./(sig*np.sqrt(2*np.pi))
-    exp = -1*((x-np.ones(len(x))*mu)**2/(2*sig**2))**p
+    exp = -1*((x-mu)**2/(2*sig**2))**p
     return c*np.exp(exp)
+
+def multivariate_gaussian(x,mu,sig):
+    c = 1./(np.sqrt(np.linalg.det(sig)*(2*np.pi)**(len(x))))
+    exp = -.5*((x-mu).T@np.linalg.inv(sig)@(x-mu))
+    return c*np.exp(exp)
+
 
 def ddx_gaussian(x,p,mu,sig):
     # from wolfram alpha:
@@ -25,20 +32,25 @@ def ddx_gaussian(x,p,mu,sig):
 
 
 num_pts = 1000
-X1 = np.linspace(-5,5,num_pts)
-X2 = np.linspace(-2,2,num_pts)
-y = np.zeros((num_pts,2))
-y[:,0] = gaussian(X1,1,X2,1)
-y[:,1] = gaussian(X1,3,X2,1)
-
+X1 = np.random.rand(num_pts)*4-2
+X2 = np.random.rand(num_pts)*4-2
 X = np.zeros((num_pts,2))
 X[:,0] = X1
 X[:,1] = X2
-# plt.figure()
-# plt.plot(X,y)
+
+y = np.zeros((num_pts,2))
+# y[:,0] = gaussian(X1,1,X2,1)
+y[:,1] = gaussian(X1,3,X2,1)
+for i in range(X.shape[0]):
+    y[i,0] = multivariate_gaussian(X[i,:],[0,1],[[1,0],[0,2]])
+
+
+fig =plt.figure()
+ax = fig.gca(projection='3d')
+plt.scatter(X[:,0],X[:,1],y[:,0])
 # plt.plot(X,ddx_gaussian(x,1,0,1))
 # plt.plot(X,ddx_gaussian(x,3,0,1))
-# plt.show()
+plt.show()
 
 # X=X.reshape(-1,1)
 print(X)
@@ -52,7 +64,7 @@ ntrees=1                 # number of trees = number of neural nets in ensemble
 maxdepth=4               # max depth of tree -- optimize this for each data set
 dropout_keep=1.0         # dropout typically set to 1 for non-Bayesian models
 
-load_model = True
+load_model = False
 
 if load_model:
     model=djinn.load(model_name=modelname)

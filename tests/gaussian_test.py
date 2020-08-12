@@ -4,7 +4,9 @@ import sklearn
 try: from sklearn.model_selection import train_test_split
 except: from sklearn.cross_validation import train_test_split
 
-import sys
+import sys,os
+# print(os.path.dirname(os.path.abspath(__file__)))
+# os.path.join('..','djinn/')
 sys.path.append('../djinn')
 import djinn
 import djinn_fns
@@ -19,8 +21,8 @@ def ddx_gaussian(x,p,mu,sig):
     # from wolfram alpha:
     # d/dx(e^(-(2^(-p - 1/2) ((x - μ)^2/σ^2)^p)/(sqrt(π) σ))) = -(2^(1/2 - p) p σ e^(-(2^(-p - 1/2) ((x - μ)^2/σ^2)^p)/(sqrt(π) σ)) ((x - μ)^2/σ^2)^(p + 1))/(sqrt(π) (x - μ)^3)
 
-    c = -(2**(1/2 - p)*p*sig*((x - mu)**2/sig**2)**(p + 1))/(np.sqrt(np.pi)*(x - mu)**3)
-    exp = -(2**(-p - 1/2)*((x - mu)**2/sig**2)**p)/(np.sqrt(np.pi)*sig)
+    c = -(2**(.5 - p)*p*sig*((x - mu)**2/sig**2)**(p + 1))/(np.sqrt(np.pi)*(x - mu)**3)
+    exp = -(2**(-p - .5)*((x - mu)**2/sig**2)**p)/(np.sqrt(np.pi)*sig)
     return c*np.exp(exp)
 
 

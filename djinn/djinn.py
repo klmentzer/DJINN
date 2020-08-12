@@ -371,7 +371,8 @@ class DJINN_Regressor():
             if input_idx==None:
                 val = val*self.__xscale.scale_[0]/unscale
             else:
-                val = 1/val[:,input_idx]*self.__xscale.scale_[input_idx]/unscale
+                print(val)
+                val = val[:,input_idx]*self.__xscale.scale_[input_idx]/unscale
             grs.append(val)
         return grs
 
